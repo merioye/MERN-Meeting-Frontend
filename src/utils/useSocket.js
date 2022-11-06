@@ -1,104 +1,93 @@
 import { useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { setSocket, setSocketEventsRegistered, setOnlineUsers, removeStreamFromRemoteUsersStreams, setOpenedRoomParticipants, setRoomEndedForAll, appendMessage, addFileToReceivedFiles, setReceivedFiles, setInfoAlert, addNewRoom, removeRoom, setRoomsParticipants, setIsUnreadMessagesPresent } from "../redux/roomsSlice";
-import io from 'socket.io-client';
-import { baseURL } from "../config/baseURL";
-
+import {
+    setSocket,
+    setSocketEventsRegistered,
+    setOnlineUsers,
+    removeStreamFromRemoteUsersStreams,
+    setOpenedRoomParticipants,
+    setRoomEndedForAll,
+    appendMessage,
+    addFileToReceivedFiles,
+    setReceivedFiles,
+    setInfoAlert,
+    addNewRoom,
+    removeRoom,
+    setRoomsParticipants,
+    setIsUnreadMessagesPresent,
+} from "../redux/roomsSlice";
+import io from "socket.io-client";
 
 export const useSocket = () => {
-
-    const { rooms: { socket, socketEventsRegistered, isChatScreenOpened }, auth: { user } } = useSelector((state)=> state);
+    const {
+        rooms: { socket, socketEventsRegistered, isChatScreenOpened },
+        auth: { user },
+    } = useSelector((state) => state);
     const dispatch = useDispatch();
 
-
-
-
-
-    useEffect(()=>{
-
-        if(user){
-
-            if(!socket){
-
-                const socketConn = io(baseURL, { transports: ['websocket']});
+    useEffect(() => {
+        if (user) {
+            if (!socket) {
+                const socketConn = io(process.env.REACT_APP_API_BASE_URL, {
+                    transports: ["websocket"],
+                });
                 dispatch(setSocket(socketConn));
-                
-            }
-            else if(socket && !socketEventsRegistered){
-                
-                socket.emit('new connection', user._id);
+            } else if (socket && !socketEventsRegistered) {
+                socket.emit("new connection", user._id);
 
-                
-                socket.on('onlineUsers', (users)=>{
+                socket.on("onlineUsers", (users) => {
                     dispatch(setOnlineUsers(users));
                 });
 
-
-                socket.on('rooms participants', (roomsParticipants)=>{
+                socket.on("rooms participants", (roomsParticipants) => {
                     dispatch(setRoomsParticipants(roomsParticipants));
                 });
 
-
-                socket.on('new room', (room)=>{
+                socket.on("new room", (room) => {
                     dispatch(addNewRoom(room));
-                })
+                });
 
-                socket.on('remove room', (roomId)=>{
+                socket.on("remove room", (roomId) => {
                     dispatch(removeRoom(roomId));
                 });
 
-
-                socket.on('updatedRoomParticipants', (participants, alert)=>{
+                socket.on("updatedRoomParticipants", (participants, alert) => {
                     dispatch(setOpenedRoomParticipants(participants));
-                    if(alert){
+                    if (alert) {
                         dispatch(setInfoAlert(alert));
                     }
-                })
+                });
 
-
-                socket.on('participant left', (userId, participants, alert)=>{
+                socket.on("participant left", (userId, participants, alert) => {
                     dispatch(removeStreamFromRemoteUsersStreams({ userId }));
                     dispatch(setOpenedRoomParticipants(participants));
                     dispatch(setInfoAlert(alert));
                 });
 
-
-                socket.on('room ended', (alert)=>{
+                socket.on("room ended", (alert) => {
                     dispatch(setRoomEndedForAll(true));
                     dispatch(setInfoAlert(alert));
                 });
 
-
-
-                socket.on('new message', (newMessage)=>{
-                    dispatch(appendMessage({ message: newMessage, fromMe: false }));
-                    if(!isChatScreenOpened){
+                socket.on("new message", (newMessage) => {
+                    dispatch(
+                        appendMessage({ message: newMessage, fromMe: false })
+                    );
+                    if (!isChatScreenOpened) {
                         dispatch(setIsUnreadMessagesPresent(true));
                     }
-                })
+                });
 
-
-                socket.on('receive files', (data)=>{
+                socket.on("receive files", (data) => {
                     dispatch(setReceivedFiles(data));
-                })
+                });
 
-
-                socket.on('receive file', (data)=>{
+                socket.on("receive file", (data) => {
                     dispatch(addFileToReceivedFiles(data));
-                })
-
-        
-
+                });
 
                 dispatch(setSocketEventsRegistered(true));
-
             }
-
         }
-
     }, [socket, dispatch, user, socketEventsRegistered, isChatScreenOpened]);
-
-
-
-
-}
+};
