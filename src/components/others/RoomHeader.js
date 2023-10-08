@@ -119,7 +119,7 @@ const RoomHeader = ({ roomId, peer }) => {
     setTimeout(() => {
       socket.emit("end room", roomId, user._id, user.name);
       leaveRoom();
-    }, 1500);
+    }, 3000);
   };
 
   const handleBackBtnClick = () => {
